@@ -1,45 +1,37 @@
-# -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'speech_to_text.ui'
-#
-# Created by: PyQt5 UI code generator 5.9.2
-#
-# WARNING! All changes made in this file will be lost!
-
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from os import listdir
-import os, langid
+import os, codecs, openpyxl
 import speech_recognition as sr
 from pydub import AudioSegment
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        
+
         MainWindow.resize(640, 480)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        
+
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(20, 110, 131, 41))
         font = QtGui.QFont()
-        font.setPointSize(16)
+        font.setPointSize(12)
         self.label.setFont(font)
         self.label.setObjectName("label")
-        
+
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
         self.label_2.setGeometry(QtCore.QRect(20, 170, 131, 41))
         font = QtGui.QFont()
-        font.setPointSize(16)
+        font.setPointSize(12)
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
 
-        
         self.lineEdit = QtWidgets.QLineEdit(self.centralwidget)
         self.lineEdit.setGeometry(QtCore.QRect(160, 120, 331, 31))
         self.lineEdit.setObjectName("lineEdit")
-        
+
         self.lineEdit_2 = QtWidgets.QLineEdit(self.centralwidget)
         self.lineEdit_2.setGeometry(QtCore.QRect(160, 180, 331, 31))
         self.lineEdit_2.setObjectName("lineEdit_2")
@@ -50,7 +42,7 @@ class Ui_MainWindow(object):
         font.setPointSize(16)
         self.label_3.setFont(font)
         self.label_3.setObjectName("label_2")
-        
+
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton.setGeometry(QtCore.QRect(160, 280, 121, 41))
         font = QtGui.QFont()
@@ -58,7 +50,7 @@ class Ui_MainWindow(object):
         self.pushButton.setFont(font)
         self.pushButton.setObjectName("pushButton")
         self.pushButton.clicked.connect(self.submit)
-        
+
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton_2.setGeometry(QtCore.QRect(350, 280, 141, 41))
         font = QtGui.QFont()
@@ -67,7 +59,6 @@ class Ui_MainWindow(object):
         self.pushButton_2.setObjectName("pushButton_2")
         self.pushButton_2.clicked.connect(QtCore.QCoreApplication.instance().quit)
 
-        
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 640, 21))
@@ -84,51 +75,81 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.label.setText(_translate("MainWindow", "Path to Media: "))
-        self.label_2.setText(_translate("MainWindow", "Path to Excel: "))
+        self.label_2.setText(_translate("MainWindow", "Path to Rawdata: "))
         self.pushButton.setText(_translate("MainWindow", "Submit"))
         self.pushButton_2.setText(_translate("MainWindow", "Exit"))
 
-
-
-    def submit(self,MainWindow):
-        
+    def submit(self, MainWindow):
         mp3_path = os.path.normpath(self.lineEdit.text())
         excel_path = os.path.normpath(self.lineEdit_2.text())
+        wit_ai_key = "W4V5LK7TMXE7RQQ3CU42P2FBY5SY23CH"
+
         files = os.listdir(mp3_path)
+        mpeg4_files = [x for x in files if '.mpeg4' in x]
 
-        mp3_files = [x for x in files if ".mp3" in x]
+        wb1 = openpyxl.load_workbook(excel_path, keep_vba=True)
+        wb2 = openpyxl.Workbook()
+        sheet1 = wb1["Sheet1"]
+        sheet2 = wb2.active
+        sheet2.cell(row=1, column=1).value = "Respondent Serial No"
+        sheet2.cell(row=1, column=2).value = "Centre"
+        sheet2.cell(row=1, column=3).value = "Respondent Name"
+        sheet2.cell(row=1, column=4).value = "Language"
 
-        for file_name in mp3_files:
-            file = os.path.join(mp3_path, file_name)
-            song = AudioSegment.from_mp3(file)
-            file = file.replace(".mp3", ".wav")
-            song.export(file, format="wav")
+        row_num = 2
+        j = True
+        while (j):
+            intnr = int(sheet1.cell(row=row_num, column=1).value)
+            sheet2.cell(row=row_num, column=1).value = intnr
+            sheet2.cell(row=row_num, column=2).value = sheet1.cell(row=row_num, column=2).value
+            sheet2.cell(row=row_num, column=3).value = sheet1.cell(row=row_num, column=4).value
 
-            r = sr.Recognizer()
-            file_audio = sr.AudioFile(file)
-            with file_audio as source:
-                r.adjust_for_ambient_noise(source)
-                audio_text = r.record(source)
+            file_name = [x for x in mpeg4_files if intnr == int(x[:8])]
+            for u, v in enumerate(file_name):
+                file = v.replace(".mpeg4", ".wav")
+                song = AudioSegment.from_file(v, "mpeg4")
+                song.export(file, format="wav")
 
-            text = r.recognize_sphinx(audio_text)
-            lang = langid.classify(text)[0]
-            print(lang)
-            text = r.recognize_sphinx(audio_text)
+                r = sr.Recognizer()
+                with sr.AudioFile(file) as source:
+                    # r.adjust_for_ambient_noise(source)
+                    audio_text = r.listen(source)
 
-            txt_file = file.replace(".wav", ".txt")
-            with open(txt_file, 'w') as out:
-                out.write(text)
+                try:
+                    text = r.recognize_wit(audio_text, key=wit_ai_key)
+                    message = "Completed"
+                except sr.UnknownValueError:
+                    message = "Could not understand audio"
+                except sr.RequestError as e:
+                    message = "Could not request results from Wit.ai service; {0}".format(e)
 
-            os.remove(file)
+                if row_num == 2:
+                    sheet2.cell(row=1, column=u * 2 + 5).value = "File Name"
+                    sheet2.cell(row=1, column=u * 2 + 6).value = "Text"
+                    sheet2.cell(row=row_num, column=u * 2 + 5).value = v
+                    sheet2.cell(row=row_num, column=u * 2 + 5).hyperlink = os.path.join(mp3_path, v)
+                    sheet2.cell(row=row_num, column=u * 2 + 6).value = text
+                else:
+                    sheet2.cell(row=row_num, column=u * 2 + 5).value = v
+                    sheet2.cell(row=row_num, column=u * 2 + 5).hyperlink = os.path.join(mp3_path, v)
+                    sheet2.cell(row=row_num, column=u * 2 + 6).value = text
+
+                os.remove(file)
+
+            row_num += 1
+            if sheet1.cell(row=row_num, column=1).value == None:
+                j = 0
+
+        wb2.save("Output.xlsx")
+        wb1.close()
 
         self.msg = QtWidgets.QMessageBox(self.centralwidget)
         self.msg.setIcon(QtWidgets.QMessageBox.Information)
 
-        self.msg.setText("Completed")
-        self.msg.setWindowTitle("Completed")
-        self.msg.setStandardButtons(QtWidgets.QMessageBox.Ok)       
+        self.msg.setText(message)
+        self.msg.setWindowTitle("Status")
+        self.msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
         self.msg.exec_()
-        
 
 
 if __name__ == "__main__":
