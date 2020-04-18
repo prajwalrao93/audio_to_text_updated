@@ -102,12 +102,12 @@ class Ui_MainWindow(object):
             intnr = int(sheet1.cell(row=row_num, column=1).value)
             sheet2.cell(row=row_num, column=1).value = intnr
             sheet2.cell(row=row_num, column=2).value = sheet1.cell(row=row_num, column=2).value
-            sheet2.cell(row=row_num, column=3).value = sheet1.cell(row=row_num, column=4).value
+            sheet2.cell(row=row_num, column=3).value = sheet1.cell(row=row_num, column=5).value
 
             file_name = [x for x in mpeg4_files if intnr == int(x[:8])]
             for u, v in enumerate(file_name):
                 file = v.replace(".mpeg4", ".wav")
-                song = AudioSegment.from_file(v, "mpeg4")
+                song = AudioSegment.from_file(os.path.join(mp3_path,v))
                 song.export(file, format="wav")
 
                 r = sr.Recognizer()
@@ -115,13 +115,12 @@ class Ui_MainWindow(object):
                     # r.adjust_for_ambient_noise(source)
                     audio_text = r.listen(source)
 
-                try:
+                #try:
                     text = r.recognize_wit(audio_text, key=wit_ai_key)
-                    message = "Completed"
-                except sr.UnknownValueError:
-                    message = "Could not understand audio"
-                except sr.RequestError as e:
-                    message = "Could not request results from Wit.ai service; {0}".format(e)
+                #except sr.UnknownValueError:
+                    text = "Could not understand audio"
+                #except sr.RequestError as e:
+                    text = "Could not request results from Wit.ai service; {0}".format(e)
 
                 if row_num == 2:
                     sheet2.cell(row=1, column=u * 2 + 5).value = "File Name"
@@ -140,7 +139,9 @@ class Ui_MainWindow(object):
             if sheet1.cell(row=row_num, column=1).value == None:
                 j = 0
 
-        wb2.save("Output.xlsx")
+        message = "Completed"
+
+        wb2.save(os.path.join(mp3_path,"Output.xlsx"))
         wb1.close()
 
         self.msg = QtWidgets.QMessageBox(self.centralwidget)
