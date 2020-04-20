@@ -1,10 +1,8 @@
-import sys
+from ffmpy import FFmpeg
 from PyQt5 import QtCore, QtGui, QtWidgets
 from os import listdir
-import os, codecs, openpyxl
+import os, openpyxl, sys, multiprocessing
 import speech_recognition as sr
-from pydub import AudioSegment
-
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -82,7 +80,7 @@ class Ui_MainWindow(object):
     def submit(self, MainWindow):
         mp3_path = os.path.normpath(self.lineEdit.text())
         excel_path = os.path.normpath(self.lineEdit_2.text())
-        wit_ai_key = "W4V5LK7TMXE7RQQ3CU42P2FBY5SY23CH"
+        wit_ai_key = "WWEHIPV5SE6EXEAV6YE4QAJZE5LF22JW"
 
         files = os.listdir(mp3_path)
         mpeg4_files = [x for x in files if '.mpeg4' in x]
@@ -103,24 +101,32 @@ class Ui_MainWindow(object):
             sheet2.cell(row=row_num, column=1).value = intnr
             sheet2.cell(row=row_num, column=2).value = sheet1.cell(row=row_num, column=2).value
             sheet2.cell(row=row_num, column=3).value = sheet1.cell(row=row_num, column=5).value
+            sheet2.cell(row=row_num, column=4).value = sheet1.cell(row=row_num, column=7).value
 
             file_name = [x for x in mpeg4_files if intnr == int(x[:8])]
             for u, v in enumerate(file_name):
                 file = v.replace(".mpeg4", ".wav")
-                song = AudioSegment.from_file(os.path.join(mp3_path,v))
-                song.export(file, format="wav")
+
+                d = os.getcwd()
+                ff = FFmpeg(executable=d + '/ffmpeg/bin/ffmpeg.exe',
+                            inputs={os.path.join(mp3_path,v): None},
+                            outputs={file: None})
+                ff.cmd
+                f'ffmpeg -i {os.path.join(mp3_path,v)} {file}'
+                ff.run()
 
                 r = sr.Recognizer()
                 with sr.AudioFile(file) as source:
                     # r.adjust_for_ambient_noise(source)
                     audio_text = r.listen(source)
 
-                #try:
+                try:
                     text = r.recognize_wit(audio_text, key=wit_ai_key)
-                #except sr.UnknownValueError:
-                    text = "Could not understand audio"
-                #except sr.RequestError as e:
-                    text = "Could not request results from Wit.ai service; {0}".format(e)
+                except sr.UnknownValueError:
+                    text = "Couldn't Recognize"
+                except sr.RequestError as e:
+                    text = "Request Timeout"
+
 
                 if row_num == 2:
                     sheet2.cell(row=1, column=u * 2 + 5).value = "File Name"
