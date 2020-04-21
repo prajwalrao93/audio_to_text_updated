@@ -104,13 +104,19 @@ class Ui_MainWindow(object):
             sheet2.cell(row=row_num, column=4).value = sheet1.cell(row=row_num, column=7).value
 
             file_name = [x for x in mpeg4_files if intnr == int(x[:8])]
-            for u, v in enumerate(file_name):
+            u = 0
+            for v in file_name:
+                if "Introduction" in v or "ReContact" in v:
+                    continue
                 file = v.replace(".mpeg4", ".wav")
 
                 d = os.getcwd()
                 ff = FFmpeg(executable=d + '/ffmpeg/bin/ffmpeg.exe',
                             inputs={os.path.join(mp3_path,v): None},
                             outputs={file: None})
+                command = f'ffmpeg -i {os.path.join(mp3_path,v)} {file}'
+
+
                 ff.cmd
                 f'ffmpeg -i {os.path.join(mp3_path,v)} {file}'
                 ff.run()
@@ -138,6 +144,7 @@ class Ui_MainWindow(object):
                     sheet2.cell(row=row_num, column=u * 2 + 5).value = v
                     sheet2.cell(row=row_num, column=u * 2 + 5).hyperlink = os.path.join(mp3_path, v)
                     sheet2.cell(row=row_num, column=u * 2 + 6).value = text
+                u = u + 1
 
                 os.remove(file)
 
