@@ -9,7 +9,6 @@ import speech_recognition as sr
 from ffmpy import FFmpeg
 from tkinter.scrolledtext import ScrolledText
 from wit import Wit
-import noisereduce as nr
 
 
 class helpScreen:
@@ -167,7 +166,7 @@ class MyApp():
         elif self.entry2.get() == "":
             messagebox.showerror("Error", "Please provide the path to Raw Data file")
             self.button1.config(state="enabled")
-        elif '\\' not in self.entry1.get():
+        elif not('\\' not in self.entry1.get() or "/" not in elf.entry1.get()):
             messagebox.showerror("Error", "Please provide correct path to Media")
             self.button1.config(state="enabled")
         elif ".xlsx" not in self.entry2.get():
@@ -178,7 +177,7 @@ class MyApp():
             excel_path = os.path.normpath(self.entry2.get())
             wit_ai_key = "WWEHIPV5SE6EXEAV6YE4QAJZE5LF22JW"
 
-            os.mkdir(os.path.join(mp3_path, NotRecognized))
+            os.mkdir(os.path.join(mp3_path, "NotRecognized"))
 
             files = os.listdir(mp3_path)
             mpeg4_files = [x for x in files if '.wav' in x]
@@ -233,10 +232,13 @@ class MyApp():
                         text = r.recognize_wit(audio_text, key=wit_ai_key)
                     except sr.UnknownValueError:
                         text = "Audio not Clear"
-                        shutil(os.path.join(mp3_path, v), os.path.join(mp3_path, NotRecognized, v))
+                        shutil.copyfile(os.path.join(mp3_path, v), os.path.join(mp3_path, "NotRecognized", v))
                     except sr.RequestError as e:
                         text = "Audio not Recognized"
-                        shutil(os.path.join(mp3_path, v), os.path.join(mp3_path, NotRecognized, v))
+                        shutil.copyfile(os.path.join(mp3_path, v), os.path.join(mp3_path, "NotRecognized", v))
+                    except TimeoutError as e:
+                        text = "Timeout"
+                        shutil.copyfile(os.path.join(mp3_path, v), os.path.join(mp3_path, "NotRecognized", v))
 
                     if row_num == 2:
                         sheet2.cell(row=1, column=u * 2 + 5).value = "File Name"
