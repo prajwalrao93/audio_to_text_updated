@@ -9,6 +9,7 @@ Packages used (for exact versions used refer requirements.txt):
 2. threading to make the gui interactive
 3. openpyxl to work with excel files
 4. speechRecognition and wit for the audio to text conversion
+5. os and shutil to work with files and folders.
 
 
 API used for conversion
