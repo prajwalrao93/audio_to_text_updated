@@ -1,3 +1,3 @@
 git add .
-git commit -m "updated readme"
+git commit -m "updated script and included converter.bat"
 git push origin master

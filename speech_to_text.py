@@ -8,7 +8,6 @@ import os, openpyxl, sys, time, threading, shutil
 import speech_recognition as sr
 from ffmpy import FFmpeg
 from tkinter.scrolledtext import ScrolledText
-from wit import Wit
 
 
 class helpScreen:
@@ -152,11 +151,41 @@ class MyApp():
         self.entry2.delete(0, last=len(self.entry2.get()))
         self.entry2.update
 
-
-    #def trim_silence(self, file):
-        #y, sr = librosa.load(file)
-        #y_trimmed, index = librosa.effects.trim(y, top_db=20, frame_length=2, hop_length=500)
-        #librosa.output.write_wav(file, y_trimmed, sr)
+    
+    def combined_text(self, updated_file):
+        n = len(updated_file)
+        r = sr.Recognizer()
+        wit_ai_key = "WWEHIPV5SE6EXEAV6YE4QAJZE5LF22JW"
+        if n == 1:
+            with sr.AudioFile(os.path.join(self.mp3_path, updated_file[0])) as source:
+                r.adjust_for_ambient_noise(source)
+                audio_text = r.listen(source)
+            try:
+                text = r.recognize_wit(audio_text, key=wit_ai_key)
+            except sr.UnknownValueError:
+                text = "Audio not Clear"
+                #shutil.copyfile(os.path.join(self.mp3_path, v), os.path.join(self.mp3_path, "NotRecognized", v))
+            except sr.RequestError as e:
+                text = "Audio not Recognized"
+                #shutil.copyfile(os.path.join(self.mp3_path, v), os.path.join(self.mp3_path, "NotRecognized", v))
+        else:
+            converted_list = []
+            for i in updated_file:
+                #time.sleep(1)
+                with sr.AudioFile(os.path.join(self.mp3_path, i)) as source:
+                    r.adjust_for_ambient_noise(source)
+                    audio_text = r.listen(source)
+                try:
+                    ind_text = r.recognize_wit(audio_text, key=wit_ai_key)
+                except sr.UnknownValueError:
+                    ind_text = ""
+                    #shutil.copyfile(os.path.join(self.mp3_path, v), os.path.join(self.mp3_path, "NotRecognized", v))
+                except sr.RequestError as e:
+                    ind_text = ""
+                    #shutil.copyfile(os.path.join(self.mp3_path, v), os.path.join(self.mp3_path, "NotRecognized", v))
+                converted_list.append(ind_text)
+            text = "".join(converted_list)
+        return text
 
 
     def submit(self):
@@ -173,13 +202,12 @@ class MyApp():
             messagebox.showerror("Error", "Please provide correct path to Raw Data file")
             self.button1.config(state="enabled")
         else:
-            mp3_path = os.path.normpath(self.entry1.get())
+            self.mp3_path = os.path.normpath(self.entry1.get())
             excel_path = os.path.normpath(self.entry2.get())
-            wit_ai_key = "WWEHIPV5SE6EXEAV6YE4QAJZE5LF22JW"
 
-            os.mkdir(os.path.join(mp3_path, "NotRecognized"))
+            #os.mkdir(os.path.join(self.mp3_path, "NotRecognized"))
 
-            files = os.listdir(mp3_path)
+            files = os.listdir(self.mp3_path)
             mpeg4_files = [x for x in files if '.wav' in x]
 
 
@@ -197,8 +225,6 @@ class MyApp():
             file_num = 1
 
             while (j):
-                time.sleep(1)
-
                 intnr = int(sheet1.cell(row=row_num, column=1).value)
                 sheet2.cell(row=row_num, column=1).value = intnr
                 sheet2.cell(row=row_num, column=2).value = sheet1.cell(row=row_num, column=2).value
@@ -209,49 +235,33 @@ class MyApp():
                 u = 0
 
                 for u,v in enumerate(file_name):
-                    self.pbar['value'] = 100 * (file_num) / len(mpeg4_files)
-                    self.name.set(f"Processing File: {v}")
-                    self.root.update()
-
-                    #self.trim_silence(os.path.join(mp3_path, v))
-
-                    #client = Wit(wit_ai_key)
-                    #resp = None
-                    #with open(os.path.join(mp3_path, v)) as source:
-                        #try:
-                            #resp = client.speech(source, None, {'Content-Type':'audio/wav'})
-                        #except:
-                            #resp = {'_text':""}
-
-                    r = sr.Recognizer()
-                    with sr.AudioFile(os.path.join(mp3_path, v)) as source:
-                        r.adjust_for_ambient_noise(source)
-                        audio_text = r.listen(source)
-                    #text = str(resp['_text'])
-                    try:
-                        text = r.recognize_wit(audio_text, key=wit_ai_key)
-                    except sr.UnknownValueError:
-                        text = "Audio not Clear"
-                        shutil.copyfile(os.path.join(mp3_path, v), os.path.join(mp3_path, "NotRecognized", v))
-                    except sr.RequestError as e:
-                        text = "Audio not Recognized"
-                        shutil.copyfile(os.path.join(mp3_path, v), os.path.join(mp3_path, "NotRecognized", v))
-                    except TimeoutError as e:
-                        text = "Timeout"
-                        shutil.copyfile(os.path.join(mp3_path, v), os.path.join(mp3_path, "NotRecognized", v))
-
-                    if row_num == 2:
-                        sheet2.cell(row=1, column=u * 2 + 5).value = "File Name"
-                        sheet2.cell(row=1, column=u * 2 + 6).value = "Text"
-                        sheet2.cell(row=row_num, column=u * 2 + 5).value = v.replace(".wav", "")
-                        sheet2.cell(row=row_num, column=u * 2 + 5).hyperlink = os.path.join(mp3_path, v.replace(".wav", ".mpeg4"))
-                        sheet2.cell(row=row_num, column=u * 2 + 6).value = text
+                    updated_file = [x for x in file_name if x[17:22] == v[17:22]]
+                    if v != updated_file[0]:
+                        continue
                     else:
-                        sheet2.cell(row=row_num, column=u * 2 + 5).value = v.replace(".wav", "")
-                        sheet2.cell(row=row_num, column=u * 2 + 5).hyperlink = os.path.join(mp3_path, v.replace(".wav", ".mpeg4"))
-                        sheet2.cell(row=row_num, column=u * 2 + 6).value = text
+                        self.pbar['value'] = 100 * (file_num) / len(mpeg4_files)
+                        self.name.set(f"Processing File: {v[:-8]}")
+                        self.root.update()
 
-                    os.remove(os.path.join(mp3_path, v))
+                        text = self.combined_text(updated_file)
+
+                        if text == "":
+                            text = "Audio Not Recognized"
+
+                        if row_num == 2:
+                            sheet2.cell(row=1, column=u * 2 + 5).value = "File Name"
+                            sheet2.cell(row=1, column=u * 2 + 6).value = "Text"
+                            sheet2.cell(row=row_num, column=u * 2 + 5).value = v.replace(".wav", "")
+                            path = f'{os.path.join(self.mp3_path.replace("FinalMedia", ""), v[:-8])}.wav'
+                            sheet2.cell(row=row_num, column=u * 2 + 5).hyperlink = path
+                            sheet2.cell(row=row_num, column=u * 2 + 6).value = text
+                        else:
+                            sheet2.cell(row=row_num, column=u * 2 + 5).value = v.replace(".wav", "")
+                            path = f'{os.path.join(self.mp3_path.replace("FinalMedia", ""), v[:-8])}.wav'
+                            sheet2.cell(row=row_num, column=u * 2 + 5).hyperlink = path
+                            sheet2.cell(row=row_num, column=u * 2 + 6).value = text
+
+                        #os.remove(os.path.join(self.mp3_path, v))
                     file_num += 1
                     
 
@@ -259,7 +269,8 @@ class MyApp():
                 if sheet1.cell(row=row_num, column=1).value == None:
                     j = 0
 
-            wb2.save(os.path.join(mp3_path,"Output.xlsx"))
+            shutil.rmtree(os.path.join(self.mp3_path, "FinalMedia"))
+            wb2.save("Output.xlsx")
             wb1.close()
             messagebox.showinfo("Information", "Completed")
             self.button1.config(state="enabled")
