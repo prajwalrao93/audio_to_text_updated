@@ -1,3 +1,3 @@
 git add .
-git commit -m "updated script and included converter.bat"
+git commit -m "demo script"
 git push origin master

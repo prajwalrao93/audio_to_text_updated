@@ -171,7 +171,7 @@ class MyApp():
         else:
             converted_list = []
             for i in updated_file:
-                #time.sleep(1)
+                time.sleep(1)
                 with sr.AudioFile(os.path.join(self.mp3_path, i)) as source:
                     r.adjust_for_ambient_noise(source)
                     audio_text = r.listen(source)
@@ -195,7 +195,7 @@ class MyApp():
         elif self.entry2.get() == "":
             messagebox.showerror("Error", "Please provide the path to Raw Data file")
             self.button1.config(state="enabled")
-        elif not('\\' not in self.entry1.get() or "/" not in elf.entry1.get()):
+        elif not('\\' not in self.entry1.get() or "/" not in self.entry1.get()):
             messagebox.showerror("Error", "Please provide correct path to Media")
             self.button1.config(state="enabled")
         elif ".xlsx" not in self.entry2.get():
@@ -233,10 +233,12 @@ class MyApp():
 
                 file_name = [x for x in mpeg4_files if intnr == int(x[:8])]
                 u = 0
+                col_num = 0
 
                 for u,v in enumerate(file_name):
                     updated_file = [x for x in file_name if x[17:22] == v[17:22]]
                     if v != updated_file[0]:
+                        file_num += 1
                         continue
                     else:
                         self.pbar['value'] = 100 * (file_num) / len(mpeg4_files)
@@ -249,27 +251,28 @@ class MyApp():
                             text = "Audio Not Recognized"
 
                         if row_num == 2:
-                            sheet2.cell(row=1, column=u * 2 + 5).value = "File Name"
-                            sheet2.cell(row=1, column=u * 2 + 6).value = "Text"
-                            sheet2.cell(row=row_num, column=u * 2 + 5).value = v.replace(".wav", "")
+                            sheet2.cell(row=1, column=col_num * 2 + 5).value = "File Name"
+                            sheet2.cell(row=1, column=col_num * 2 + 6).value = "Text"
+                            sheet2.cell(row=row_num, column=col_num * 2 + 5).value = v.replace(".wav", "")
                             path = f'{os.path.join(self.mp3_path.replace("FinalMedia", ""), v[:-8])}.wav'
-                            sheet2.cell(row=row_num, column=u * 2 + 5).hyperlink = path
-                            sheet2.cell(row=row_num, column=u * 2 + 6).value = text
+                            sheet2.cell(row=row_num, column=col_num * 2 + 5).hyperlink = path
+                            sheet2.cell(row=row_num, column=col_num * 2 + 6).value = text
                         else:
-                            sheet2.cell(row=row_num, column=u * 2 + 5).value = v.replace(".wav", "")
+                            sheet2.cell(row=row_num, column=col_num * 2 + 5).value = v.replace(".wav", "")
                             path = f'{os.path.join(self.mp3_path.replace("FinalMedia", ""), v[:-8])}.wav'
-                            sheet2.cell(row=row_num, column=u * 2 + 5).hyperlink = path
-                            sheet2.cell(row=row_num, column=u * 2 + 6).value = text
+                            sheet2.cell(row=row_num, column=col_num * 2 + 5).hyperlink = path
+                            sheet2.cell(row=row_num, column=col_num * 2 + 6).value = text
 
                         #os.remove(os.path.join(self.mp3_path, v))
-                    file_num += 1
+                        file_num += 1
+                        col_num += 1
                     
 
                 row_num += 1
                 if sheet1.cell(row=row_num, column=1).value == None:
                     j = 0
 
-            shutil.rmtree(os.path.join(self.mp3_path, "FinalMedia"))
+            shutil.rmtree(os.path.join(self.mp3_path))
             wb2.save("Output.xlsx")
             wb1.close()
             messagebox.showinfo("Information", "Completed")
