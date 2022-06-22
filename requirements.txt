@@ -15,7 +15,7 @@ llvmlite==0.32.0
 matplotlib==3.2.1
 noisereduce==1.1.0
 numba==0.49.0
-numpy==1.18.4
+numpy==1.22.0
 openpyxl==3.0.3
 Pillow==7.1.2
 prompt-toolkit==3.0.5
